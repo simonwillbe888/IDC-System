@@ -1,0 +1,5 @@
+{
+  "name": "OmniSight IDC 物联网平台",
+  "description": "基于 Vue 3、Tailwind CSS 和 Gemini AI 构建的高性能 IDC 物联网监控及 AIOps 智能运维平台。",
+  "requestFramePermissions": []
+}
