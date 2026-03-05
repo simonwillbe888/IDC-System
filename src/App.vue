@@ -16,8 +16,13 @@ import {
   ChevronRight,
   Database
 } from 'lucide-vue-next';
-import { GoogleGenAI } from "@google/genai";
 
+// 导入组件
+import AIAssistant from './components/AIAssistant.vue';
+import DashboardStats from './components/DashboardStats.vue';
+import RackMap from './components/RackMap.vue';
+import SystemLogs from './components/SystemLogs.vue';
+ 
 // --- Types ---
 interface Metric {
   label: string;
@@ -39,17 +44,22 @@ interface Rack {
 const activeTab = ref('dashboard');
 const isSidebarOpen = ref(true);
 const searchQuery = ref('');
-const aiQuery = ref('');
-const aiResponse = ref('');
-const isAiLoading = ref(false);
 
 const selectedRack = ref<Rack | null>(null);
 const isDetailOpen = ref(false);
 
+// 系统状态数据，用于AI助手
+const systemStatus = computed(() => ({
+  powerConsumption: `${metrics.value[0].value}${metrics.value[0].unit}`,
+  averageTemperature: `${metrics.value[1].value}${metrics.value[1].unit}`,
+  networkTraffic: `总计 ${(parseInt(metrics.value[2].value as string) + parseInt(metrics.value[3].value as string))}Gbps`,
+  criticalAlerts: '12号机架高温, 核心交换机 B 电源故障'
+}));
+
 // 历史分析报告数据
 const historyReports = ref([
-  { id: 'REP-2024-02', date: '2024-02-28', title: '2月能源效率与能耗分析报告', author: 'Gemini AI', score: 94, tags: ['PUE', '能耗优化'] },
-  { id: 'REP-2024-01', date: '2024-01-31', title: '1月硬件可靠性与故障回溯报告', author: 'Gemini AI', score: 88, tags: ['硬件', '可靠性'] },
+  { id: 'REP-2024-02', date: '2024-02-28', title: '2月能源效率与能耗分析报告', author: 'Kimi AI', score: 94, tags: ['PUE', '能耗优化'] },
+  { id: 'REP-2024-01', date: '2024-01-31', title: '1月硬件可靠性与故障回溯报告', author: 'Kimi AI', score: 88, tags: ['硬件', '可靠性'] },
   { id: 'REP-2023-Q4', date: '2023-12-31', title: '2023年第四季度整体运行评估', author: '系统自动生成', score: 91, tags: ['季度总结', '全量数据'] },
 ]);
 
@@ -189,35 +199,14 @@ onUnmounted(() => {
   if (cleanupChart) cleanupChart();
 });
 
-// --- AI Service ---
-const askGemini = async () => {
-  if (!aiQuery.value.trim()) return;
-  
-  isAiLoading.value = true;
-  aiResponse.value = '';
-  
-  try {
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: `你是一位资深的 IDC（互联网数据中心）运维专家助手。
-      当前系统状态：
-      - 总功耗: 1.24MW
-      - 平均温度: 22.4°C
-      - 网络流量: 总计 830Gbps
-      - 关键警报: 12号机架高温, 核心交换机 B 电源故障。
-      
-      用户问题: ${aiQuery.value}
-      请用中文回答。`,
-    });
-    
-    aiResponse.value = response.text || "未收到回复。";
-  } catch (err) {
-    aiResponse.value = "连接 AIOps 服务时出错。请检查 API 配置。";
-    console.error(err);
-  } finally {
-    isAiLoading.value = false;
-  }
+// 处理AI助手响应
+const handleAIResponse = (content: string) => {
+  console.log('AI Response:', content);
+};
+
+// 切换到机架视图
+const handleViewAllRacks = () => {
+  activeTab.value = 'racks';
 };
 
 // --- Lifecycle ---
@@ -253,8 +242,8 @@ const statusColor = (status: string) => {
           <Database class="text-black w-6 h-6" />
         </div>
         <div v-if="isSidebarOpen" class="overflow-hidden whitespace-nowrap">
-          <span class="font-black text-xl tracking-tighter text-white block">IDC运维平台</span>
-          <span class="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">IDC OS v2.4</span>
+          <span class="font-black text-xl tracking-tighter text-white block">IDC运营指挥平台</span>
+          <span class="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">IDC OS v1.0</span>
         </div>
       </div>
 
@@ -333,136 +322,27 @@ const statusColor = (status: string) => {
       <!-- Dashboard View -->
       <div v-if="activeTab === 'dashboard'" class="space-y-8">
         <!-- Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div 
-            v-for="metric in metrics" 
-            :key="metric.label"
-            class="bg-[#111113] border border-white/5 p-6 rounded-2xl hover:border-emerald-500/30 hover:bg-emerald-500/[0.02] transition-all duration-500 group relative overflow-hidden"
-          >
-            <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-colors"></div>
-            <div class="flex items-center justify-between mb-4">
-              <span class="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">{{ metric.label }}</span>
-              <div :class="['p-2 rounded-xl bg-opacity-10 text-emerald-400 border border-emerald-500/20', 'bg-' + metric.color + '-500']">
-                <component :is="metric.label.includes('功耗') ? Zap : metric.label.includes('温度') ? Thermometer : Activity" class="w-4 h-4" />
-              </div>
-            </div>
-            <div class="flex items-baseline gap-2">
-              <span class="text-4xl font-black text-white tracking-tighter tabular-nums">{{ metric.value }}</span>
-              <span class="text-slate-500 font-bold text-sm">{{ metric.unit }}</span>
-            </div>
-            <div class="mt-6 flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <span :class="['text-[10px] font-black px-2 py-1 rounded-lg', metric.trend === 'up' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400']">
-                  {{ metric.trend === 'up' ? '↑ 2.4%' : '↓ 1.1%' }}
-                </span>
-                <span class="text-[10px] font-bold text-slate-600 uppercase tracking-widest">较上小时</span>
-              </div>
-              <div class="flex gap-0.5">
-                <div v-for="i in 5" :key="i" :class="['w-1 h-3 rounded-full', i < 4 ? 'bg-emerald-500' : 'bg-white/5']"></div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <DashboardStats :metrics="metrics" />
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <!-- Rack Map (Mini) -->
-          <div class="lg:col-span-2 bg-[#111113] border border-white/5 rounded-2xl p-6">
-            <div class="flex items-center justify-between mb-6">
-              <h3 class="text-lg font-bold text-white">机架健康矩阵</h3>
-              <button @click="activeTab = 'racks'" class="text-emerald-400 text-sm font-medium hover:underline">查看全部机架</button>
-            </div>
-            <div class="grid grid-cols-6 md:grid-cols-8 gap-3">
-              <div 
-                v-for="rack in racks.slice(0, 24)" 
-                :key="rack.id"
-                @click="openRackDetail(rack)"
-                :class="[
-                  'aspect-square rounded-lg border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer hover:scale-105',
-                  statusColor(rack.status)
-                ]"
-              >
-                <span class="text-[10px] font-bold opacity-60">{{ rack.id }}</span>
-                <Server class="w-4 h-4" />
-              </div>
-            </div>
+          <div class="lg:col-span-2">
+            <RackMap 
+              :racks="racks" 
+              @view-all="handleViewAllRacks"
+              @rack-click="openRackDetail"
+            />
           </div>
 
           <!-- AIOps Assistant -->
-          <div class="bg-[#111113] border border-white/5 rounded-2xl p-6 flex flex-col">
-            <div class="flex items-center gap-3 mb-6">
-              <div class="p-2 bg-indigo-500/10 rounded-lg">
-                <MessageSquare class="text-indigo-400 w-5 h-5" />
-              </div>
-              <h3 class="text-lg font-bold text-white">AIOps 智能助手</h3>
-            </div>
-            
-            <div class="flex-1 overflow-y-auto space-y-4 mb-4 min-h-[200px] max-h-[300px] pr-2 custom-scrollbar">
-              <div v-if="!aiResponse && !isAiLoading" class="text-slate-500 text-sm italic">
-                您可以询问系统健康状况、异常分析或优化建议。
-              </div>
-              <div v-if="isAiLoading" class="flex items-center gap-2 text-indigo-400 text-sm animate-pulse">
-                <Activity class="w-4 h-4" />
-                <span>正在分析遥测数据...</span>
-              </div>
-              <div v-if="aiResponse" class="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-4 text-sm leading-relaxed text-slate-300">
-                {{ aiResponse }}
-              </div>
-            </div>
-
-            <div class="relative">
-              <input 
-                v-model="aiQuery"
-                @keyup.enter="askGemini"
-                type="text" 
-                placeholder="咨询 Gemini..." 
-                class="w-full bg-[#0A0A0B] border border-white/5 rounded-xl pl-4 pr-12 py-3 text-sm focus:outline-none focus:border-indigo-500/50"
-              />
-              <button 
-                @click="askGemini"
-                class="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
-              >
-                <ChevronRight class="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+          <AIAssistant 
+            :system-status="systemStatus" 
+            @response="handleAIResponse"
+          />
         </div>
 
         <!-- Recent Logs -->
-        <div class="bg-[#111113] border border-white/5 rounded-2xl overflow-hidden">
-          <div class="p-6 border-bottom border-white/5">
-            <h3 class="text-lg font-bold text-white">系统事件日志</h3>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left">
-              <thead>
-                <tr class="bg-white/2 text-slate-500 text-xs font-bold uppercase tracking-wider">
-                  <th class="px-6 py-4">时间戳</th>
-                  <th class="px-6 py-4">级别</th>
-                  <th class="px-6 py-4">事件描述</th>
-                  <th class="px-6 py-4">操作</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-white/5">
-                <tr v-for="log in logs" :key="log.id" class="hover:bg-white/2 transition-colors">
-                  <td class="px-6 py-4 text-sm font-mono text-slate-400">{{ log.time }}</td>
-                  <td class="px-6 py-4">
-                    <span :class="[
-                      'text-[10px] font-bold px-2 py-0.5 rounded uppercase',
-                      log.type === 'critical' ? 'bg-rose-500/10 text-rose-400' : 
-                      log.type === 'warning' ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'
-                    ]">
-                      {{ log.type === 'critical' ? '严重' : log.type === 'warning' ? '警告' : '信息' }}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 text-sm text-slate-300">{{ log.msg }}</td>
-                  <td class="px-6 py-4">
-                    <button class="text-xs font-bold text-slate-500 hover:text-white transition-colors">确认</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <SystemLogs :logs="logs" />
       </div>
 
       <!-- Rack View Tab -->
