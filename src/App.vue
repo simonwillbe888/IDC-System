@@ -22,6 +22,9 @@ import AIAssistant from './components/AIAssistant.vue';
 import DashboardStats from './components/DashboardStats.vue';
 import RackMap from './components/RackMap.vue';
 import SystemLogs from './components/SystemLogs.vue';
+import ParticleBackground from './components/ParticleBackground.vue';
+import RackDetail3D from './components/RackDetail3D.vue';
+import AnimatedBackground from './components/AnimatedBackground.vue';
  
 // --- Types ---
 interface Metric {
@@ -229,20 +232,29 @@ const statusColor = (status: string) => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#0A0A0B] text-slate-200 font-sans selection:bg-emerald-500/30">
-    <!-- Sidebar -->
+  <div class="min-h-screen text-slate-200 font-sans selection:bg-emerald-500/30 relative overflow-hidden">
+    <!-- 全局背景动画 -->
+    <AnimatedBackground />
+    
+    <!-- 扫描线效果 -->
+    <div class="scanlines"></div>
+    
+    <!-- 侧边栏 -->
     <aside 
       :class="[
-        'fixed left-0 top-0 h-full bg-[#111113]/80 backdrop-blur-xl border-r border-white/5 transition-all duration-500 z-50',
+        'sidebar-glass fixed left-0 top-0 h-full transition-all duration-500 z-50',
         isSidebarOpen ? 'w-64' : 'w-20'
       ]"
     >
+      <!-- 侧边栏背景光晕 -->
+      <div class="absolute inset-0 bg-gradient-to-b from-emerald-500/5 via-transparent to-emerald-500/5"></div>
+      <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500/50 via-cyan-500/50 to-emerald-500/50"></div>
       <div class="p-6 flex items-center gap-3">
-        <div class="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/20">
+        <div class="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/30 glow-effect">
           <Database class="text-black w-6 h-6" />
         </div>
         <div v-if="isSidebarOpen" class="overflow-hidden whitespace-nowrap">
-          <span class="font-black text-xl tracking-tighter text-white block">IDC运营指挥平台</span>
+          <span class="font-black text-xl tracking-tighter text-white block neon-text">IDC 运营指挥平台</span>
           <span class="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">IDC OS v1.0</span>
         </div>
       </div>
@@ -259,30 +271,30 @@ const statusColor = (status: string) => {
           :key="item.id"
           @click="activeTab = item.id"
           :class="[
-            'w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden',
-            activeTab === item.id ? 'bg-emerald-500/10 text-emerald-400 shadow-inner shadow-emerald-500/5' : 'text-slate-400 hover:bg-white/5 hover:text-white'
+            'cyber-button w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden holo-card',
+            activeTab === item.id ? 'bg-emerald-500/10 text-emerald-400 shadow-inner shadow-emerald-500/5 border-emerald-500/30' : 'text-slate-400 hover:bg-white/5 hover:text-white'
           ]"
         >
-          <div v-if="activeTab === item.id" class="absolute left-0 top-0 w-1 h-full bg-emerald-500"></div>
-          <component :is="item.icon" :class="['w-5 h-5 transition-transform duration-300 group-hover:scale-110', activeTab === item.id ? 'text-emerald-400' : '']" />
+          <div v-if="activeTab === item.id" class="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-emerald-400 to-emerald-600 glow-effect"></div>
+          <component :is="item.icon" :class="['w-5 h-5 transition-transform duration-300 group-hover:scale-125 group-hover:rotate-12', activeTab === item.id ? 'text-emerald-400' : '']" />
           <span v-if="isSidebarOpen" class="font-bold text-sm tracking-wide">{{ item.label }}</span>
-          <div v-if="item.id === 'alerts' && alertStats.critical > 0" class="ml-auto w-2 h-2 bg-rose-500 rounded-full animate-pulse"></div>
+          <div v-if="item.id === 'alerts' && alertStats.critical > 0" class="ml-auto w-2 h-2 bg-rose-500 rounded-full animate-pulse alert-pulse"></div>
         </button>
       </nav>
 
       <div class="absolute bottom-8 left-0 w-full px-3">
-        <div v-if="isSidebarOpen" class="mb-6 p-4 bg-white/2 rounded-2xl border border-white/5">
+        <div v-if="isSidebarOpen" class="mb-6 p-4 holo-card rounded-2xl glow-effect">
           <div class="flex items-center justify-between mb-2">
             <span class="text-[10px] font-bold text-slate-500 uppercase">系统健康度</span>
-            <span class="text-[10px] font-bold text-emerald-400">98%</span>
+            <span class="text-[10px] font-bold text-emerald-400 neon-text">98%</span>
           </div>
-          <div class="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-            <div class="w-[98%] h-full bg-emerald-500"></div>
+          <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+            <div class="w-[98%] h-full bg-gradient-to-r from-emerald-500 to-emerald-400 glow-effect"></div>
           </div>
         </div>
         <button 
           @click="isSidebarOpen = !isSidebarOpen"
-          class="w-full flex items-center gap-3 px-3 py-3 text-slate-400 hover:text-white transition-all duration-300 hover:bg-white/5 rounded-xl"
+          class="cyber-button w-full flex items-center gap-3 px-3 py-3 text-slate-400 hover:text-white transition-all duration-300 hover:bg-white/5 rounded-xl holo-card"
         >
           <ChevronRight :class="['w-5 h-5 transition-transform duration-500', isSidebarOpen ? 'rotate-180' : '']" />
           <span v-if="isSidebarOpen" class="font-bold text-sm">收起菜单</span>
@@ -291,29 +303,41 @@ const statusColor = (status: string) => {
     </aside>
 
     <!-- Main Content -->
-    <main :class="['transition-all duration-300 pt-6 px-8 pb-12', isSidebarOpen ? 'ml-64' : 'ml-20']">
+    <main :class="['transition-all duration-300 pt-6 px-8 pb-12 relative z-10', isSidebarOpen ? 'ml-64' : 'ml-20']">
+      <!-- 主内容区域背景光晕 -->
+        <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent"></div>
+        <div class="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent"></div>
+        
+        <!-- 四角装饰 -->
+        <div class="absolute top-4 left-4 w-8 h-8 border-l-2 border-t-2 border-emerald-500/30 rounded-tl-xl"></div>
+        <div class="absolute top-4 right-4 w-8 h-8 border-r-2 border-t-2 border-emerald-500/30 rounded-tr-xl"></div>
+        <div class="absolute bottom-4 left-4 w-8 h-8 border-l-2 border-b-2 border-emerald-500/30 rounded-bl-xl"></div>
+        <div class="absolute bottom-4 right-4 w-8 h-8 border-r-2 border-b-2 border-emerald-500/30 rounded-br-xl"></div>
       <!-- Header -->
-      <header class="flex items-center justify-between mb-8">
+      <header class="flex items-center justify-between mb-8 holo-card p-6 rounded-2xl">
         <div>
-          <h1 class="text-2xl font-bold text-white tracking-tight">IDC 运营指挥中心</h1>
-          <p class="text-slate-500 text-sm mt-1">实时监控区域: 华东-上海-1</p>
+          <h1 class="text-2xl font-bold text-white tracking-tight neon-text">IDC 运营指挥中心</h1>
+          <p class="text-slate-400 text-sm mt-1 flex items-center gap-2">
+            <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+            实时监控区域：华东 - 上海 -1
+          </p>
         </div>
 
         <div class="flex items-center gap-4">
-          <div class="relative group">
+          <div class="relative group cyber-tooltip" data-tooltip="搜索设备、机架或警报">
             <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
             <input 
               v-model="searchQuery"
               type="text" 
               placeholder="搜索设备..." 
-              class="bg-[#111113] border border-white/5 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-emerald-500/50 w-64 transition-all"
+              class="holo-card border border-white/5 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-emerald-500/50 w-64 transition-all bg-transparent"
             />
           </div>
-          <button class="p-2.5 bg-[#111113] border border-white/5 rounded-xl text-slate-400 hover:text-white transition-colors relative">
+          <button class="cyber-button p-2.5 holo-card border border-white/5 rounded-xl text-slate-400 hover:text-white transition-colors relative glow-effect">
             <Bell class="w-5 h-5" />
-            <span class="absolute top-2 right-2 w-2 h-2 bg-emerald-500 rounded-full border-2 border-[#111113]"></span>
+            <span class="absolute top-2 right-2 w-2 h-2 bg-emerald-500 rounded-full border-2 border-[#111113] animate-pulse"></span>
           </button>
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-black font-bold">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-black font-bold glow-effect cursor-pointer hover:scale-110 transition-transform">
             管理员
           </div>
         </div>
@@ -362,24 +386,24 @@ const statusColor = (status: string) => {
             v-for="rack in racks" 
             :key="rack.id"
             @click="openRackDetail(rack)"
-            class="bg-[#111113] border border-white/5 rounded-xl p-4 hover:border-emerald-500/50 transition-all cursor-pointer group"
+            class="holo-card border border-white/5 rounded-xl p-4 hover:border-emerald-500/50 transition-all cursor-pointer group rack-3d"
           >
             <div class="flex items-center justify-between mb-3">
               <span class="text-xs font-mono text-slate-500">{{ rack.id }}</span>
-              <span :class="['w-2 h-2 rounded-full', rack.status === 'healthy' ? 'bg-emerald-500' : rack.status === 'warning' ? 'bg-amber-500' : 'bg-rose-500']"></span>
+              <span :class="['w-2 h-2 rounded-full animate-pulse', rack.status === 'healthy' ? 'bg-emerald-500' : rack.status === 'warning' ? 'bg-amber-500' : 'bg-rose-500']"></span>
             </div>
             <div class="flex flex-col items-center py-2">
-              <Server :class="['w-10 h-10 mb-2', rack.status === 'healthy' ? 'text-slate-700' : rack.status === 'warning' ? 'text-amber-500/50' : 'text-rose-500/50']" />
-              <span class="text-sm font-bold text-white">{{ rack.name }}</span>
+              <Server :class="['w-10 h-10 mb-2 transition-all duration-500 group-hover:scale-110 group-hover:text-emerald-400', rack.status === 'healthy' ? 'text-slate-700' : rack.status === 'warning' ? 'text-amber-500/50' : 'text-rose-500/50']" />
+              <span class="text-sm font-bold text-white group-hover:neon-text">{{ rack.name }}</span>
             </div>
             <div class="mt-4 space-y-2">
               <div class="flex justify-between text-[10px] text-slate-500">
                 <span>负载</span>
                 <span>{{ rack.load }}%</span>
               </div>
-              <div class="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+              <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
                 <div 
-                  :class="['h-full transition-all', rack.load > 80 ? 'bg-rose-500' : rack.load > 60 ? 'bg-amber-500' : 'bg-emerald-500']"
+                  :class="['h-full transition-all duration-500 glow-effect', rack.load > 80 ? 'bg-gradient-to-r from-rose-500 to-rose-400' : rack.load > 60 ? 'bg-gradient-to-r from-amber-500 to-amber-400' : 'bg-gradient-to-r from-emerald-500 to-emerald-400']"
                   :style="{ width: rack.load + '%' }"
                 ></div>
               </div>
@@ -584,89 +608,203 @@ const statusColor = (status: string) => {
       </div>
     </main>
 
-    <!-- Rack Detail Drawer -->
-    <div 
-      v-if="isDetailOpen && selectedRack"
-      class="fixed inset-0 z-[100] flex justify-end"
-    >
-      <div @click="isDetailOpen = false" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-      <div class="relative w-full max-w-md bg-[#111113] border-l border-white/10 h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
-        <div class="p-6 border-b border-white/5 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div :class="['p-2 rounded-lg', statusColor(selectedRack.status)]">
-              <Server class="w-5 h-5" />
-            </div>
-            <div>
-              <h2 class="text-xl font-bold text-white">{{ selectedRack.name }}</h2>
-              <p class="text-xs text-slate-500 font-mono">{{ selectedRack.id }} • 42U 标准机架</p>
-            </div>
-          </div>
-          <button @click="isDetailOpen = false" class="p-2 hover:bg-white/5 rounded-lg text-slate-500 hover:text-white transition-colors">
-            <ChevronRight class="w-6 h-6" />
-          </button>
-        </div>
-
-        <div class="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
-          <!-- Quick Stats -->
-          <div class="grid grid-cols-2 gap-4">
-            <div class="bg-white/2 border border-white/5 p-4 rounded-xl">
-              <p class="text-[10px] text-slate-500 uppercase font-bold mb-1">实时温度</p>
-              <div class="flex items-baseline gap-1">
-                <span class="text-2xl font-bold text-white">{{ selectedRack.temp }}</span>
-                <span class="text-xs text-slate-500">°C</span>
+    <!-- 机架详情弹窗 (3D 模型) -->
+      <div 
+        v-if="isDetailOpen && selectedRack"
+        class="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8"
+      >
+        <!-- 背景遮罩 -->
+        <div 
+          class="absolute inset-0 bg-black/90 backdrop-blur-md"
+          @click="isDetailOpen = false"
+        ></div>
+        
+        <!-- 弹窗内容 -->
+        <div class="relative z-10 w-full max-w-6xl h-[85vh] bg-[#0f0f11]/95 backdrop-blur-xl rounded-2xl overflow-hidden flex flex-col border border-emerald-500/30 shadow-2xl shadow-emerald-500/20">
+          <!-- 弹窗头部 -->
+          <div class="flex items-center justify-between p-6 border-b border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 to-transparent">
+            <div class="flex items-center gap-4">
+              <div class="p-3 rounded-xl bg-emerald-500/20 border border-emerald-500/40 glow-effect">
+                <Server class="w-6 h-6 text-emerald-400" />
+              </div>
+              <div>
+                <h2 class="text-2xl font-bold text-white neon-text flex items-center gap-2">
+                  {{ selectedRack.name }}
+                  <span :class="[
+                    'px-2 py-1 rounded text-[10px] font-bold uppercase',
+                    selectedRack.status === 'healthy' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                    selectedRack.status === 'warning' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                    'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                  ]">
+                    {{ selectedRack.status === 'healthy' ? '正常' : selectedRack.status === 'warning' ? '警告' : '严重' }}
+                  </span>
+                </h2>
+                <p class="text-sm text-slate-400 mt-1 flex items-center gap-2">
+                  <span class="font-mono text-emerald-400">{{ selectedRack.id }}</span>
+                  <span class="text-slate-600">•</span>
+                  <span>42U 标准机架</span>
+                  <span class="text-slate-600">•</span>
+                  <span class="text-emerald-400">实时 3D 视图</span>
+                </p>
               </div>
             </div>
-            <div class="bg-white/2 border border-white/5 p-4 rounded-xl">
-              <p class="text-[10px] text-slate-500 uppercase font-bold mb-1">当前负载</p>
-              <div class="flex items-baseline gap-1">
-                <span class="text-2xl font-bold text-white">{{ selectedRack.load }}</span>
-                <span class="text-xs text-slate-500">%</span>
+            <button 
+              @click="isDetailOpen = false"
+              class="cyber-button p-3 holo-card rounded-xl text-slate-400 hover:text-white border border-white/10 hover:border-emerald-500/50 transition-all"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          <!-- 主体内容：左侧 3D 模型，右侧信息面板 -->
+          <div class="flex-1 flex overflow-hidden">
+            <!-- 左侧：3D 机架模型 -->
+            <div class="flex-1 p-6 overflow-hidden border-r border-emerald-500/10">
+              <div class="w-full h-full holo-card rounded-xl overflow-hidden border border-emerald-500/20">
+                <RackDetail3D 
+                  :slots="rackSlots"
+                  :rack-name="selectedRack.name"
+                  :rack-id="selectedRack.id"
+                />
               </div>
             </div>
-          </div>
-
-          <!-- Rack U-Space Visualization -->
-          <div>
-            <h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2">
-              <LayoutDashboard class="w-4 h-4 text-emerald-400" />
-              U 位占用视图
-            </h3>
-            <div class="bg-[#0A0A0B] border border-white/5 rounded-xl p-4 flex flex-col gap-1">
-              <div 
-                v-for="slot in rackSlots" 
-                :key="slot.u"
-                :class="[
-                  'h-6 rounded flex items-center px-3 justify-between text-[10px] transition-all',
-                  slot.occupied 
-                    ? (slot.status === 'error' ? 'bg-rose-500/20 border border-rose-500/30 text-rose-400' : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400')
-                    : 'bg-white/2 border border-dashed border-white/5 text-slate-600'
-                ]"
-              >
-                <span class="font-mono w-4">{{ slot.u }}</span>
-                <span v-if="slot.occupied" class="font-bold uppercase tracking-widest">{{ slot.type }} Node</span>
-                <span v-else class="italic">Empty Slot</span>
-                <div v-if="slot.occupied" class="flex gap-1">
-                  <div v-for="i in 3" :key="i" :class="['w-1 h-1 rounded-full', slot.status === 'online' ? 'bg-emerald-500' : 'bg-rose-500']"></div>
+            
+            <!-- 右侧：信息面板 -->
+            <div class="w-80 p-6 overflow-y-auto custom-scrollbar bg-gradient-to-b from-emerald-500/5 to-transparent">
+              <!-- 实时统计 -->
+              <div class="space-y-4 mb-6">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2 mb-4">
+                  <Activity class="w-4 h-4 text-emerald-400" />
+                  实时统计
+                </h3>
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="holo-card p-4 rounded-xl text-center border border-emerald-500/20">
+                    <div class="text-[10px] text-slate-500 uppercase font-bold mb-1">总 U 位</div>
+                    <div class="text-2xl font-bold text-white neon-text">42U</div>
+                  </div>
+                  <div class="holo-card p-4 rounded-xl text-center border border-emerald-500/20">
+                    <div class="text-[10px] text-slate-500 uppercase font-bold mb-1">已用</div>
+                    <div class="text-2xl font-bold text-emerald-400 neon-text">{{ rackSlots.filter(s => s.occupied).length }}U</div>
+                  </div>
+                  <div class="holo-card p-4 rounded-xl text-center border border-emerald-500/20">
+                    <div class="text-[10px] text-slate-500 uppercase font-bold mb-1">空闲</div>
+                    <div class="text-2xl font-bold text-slate-400 neon-text">{{ rackSlots.filter(s => !s.occupied).length }}U</div>
+                  </div>
+                  <div class="holo-card p-4 rounded-xl text-center border border-emerald-500/20">
+                    <div class="text-[10px] text-slate-500 uppercase font-bold mb-1">使用率</div>
+                    <div class="text-2xl font-bold text-emerald-400 neon-text">{{ Math.round(rackSlots.filter(s => s.occupied).length / rackSlots.length * 100) }}%</div>
+                  </div>
                 </div>
               </div>
+              
+              <!-- 负载信息 -->
+              <div class="mb-6">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2 mb-4">
+                  <Zap class="w-4 h-4 text-amber-400" />
+                  负载状态
+                </h3>
+                <div class="holo-card p-4 rounded-xl border border-amber-500/20">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-[10px] text-slate-500 uppercase">当前负载</span>
+                    <span class="text-lg font-bold text-amber-400 neon-text">{{ selectedRack.load }}%</span>
+                  </div>
+                  <div class="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                    <div 
+                      :class="[
+                        'h-full transition-all duration-500 glow-effect',
+                        selectedRack.load > 80 ? 'bg-gradient-to-r from-rose-500 to-rose-400' :
+                        selectedRack.load > 60 ? 'bg-gradient-to-r from-amber-500 to-amber-400' :
+                        'bg-gradient-to-r from-emerald-500 to-emerald-400'
+                      ]"
+                      :style="{ width: selectedRack.load + '%' }"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 温度信息 -->
+              <div class="mb-6">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2 mb-4">
+                  <Thermometer class="w-4 h-4 text-blue-400" />
+                  温度监控
+                </h3>
+                <div class="holo-card p-4 rounded-xl border border-blue-500/20">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10px] text-slate-500 uppercase">实时温度</span>
+                    <div class="flex items-center gap-2">
+                      <span class="text-lg font-bold text-blue-400 neon-text">{{ selectedRack.temp }}°C</span>
+                      <div :class="[
+                        'w-2 h-2 rounded-full animate-pulse',
+                        selectedRack.temp > 25 ? 'bg-rose-500' :
+                        selectedRack.temp > 22 ? 'bg-amber-500' :
+                        'bg-emerald-500'
+                      ]"></div>
+                    </div>
+                  </div>
+                  <p class="text-[10px] text-slate-500 mt-2">
+                    {{ selectedRack.temp > 25 ? '温度偏高，建议检查散热' :
+                       selectedRack.temp > 22 ? '温度正常，持续监控' :
+                       '温度理想，运行良好' }}
+                  </p>
+                </div>
+              </div>
+              
+              <!-- 设备类型分布 -->
+              <div class="mb-6">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2 mb-4">
+                  <Cpu class="w-4 h-4 text-purple-400" />
+                  设备分布
+                </h3>
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between p-3 holo-card rounded-lg border border-white/5">
+                    <div class="flex items-center gap-2">
+                      <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                      <span class="text-[10px] text-slate-400">计算节点</span>
+                    </div>
+                    <span class="text-xs font-bold text-white">{{ rackSlots.filter(s => s.occupied && s.type === 'Compute').length }}</span>
+                  </div>
+                  <div class="flex items-center justify-between p-3 holo-card rounded-lg border border-white/5">
+                    <div class="flex items-center gap-2">
+                      <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                      <span class="text-[10px] text-slate-400">存储节点</span>
+                    </div>
+                    <span class="text-xs font-bold text-white">{{ rackSlots.filter(s => s.occupied && s.type === 'Storage').length }}</span>
+                  </div>
+                  <div class="flex items-center justify-between p-3 holo-card rounded-lg border border-white/5">
+                    <div class="flex items-center gap-2">
+                      <div class="w-2 h-2 rounded-full bg-slate-500"></div>
+                      <span class="text-[10px] text-slate-400">空闲 U 位</span>
+                    </div>
+                    <span class="text-xs font-bold text-white">{{ rackSlots.filter(s => !s.occupied).length }}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 操作按钮 -->
+              <div class="space-y-3">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2 mb-2">
+                  <Settings class="w-4 h-4 text-slate-400" />
+                  远程操作
+                </h3>
+                <button class="cyber-button w-full py-3 holo-card border border-emerald-500/30 rounded-xl text-sm font-bold text-emerald-400 transition-all flex items-center justify-center gap-2 hover:bg-emerald-500/10">
+                  <Activity class="w-4 h-4" />
+                  导出健康报告
+                </button>
+                <button class="cyber-button w-full py-3 holo-card border border-amber-500/30 rounded-xl text-sm font-bold text-amber-400 transition-all flex items-center justify-center gap-2 hover:bg-amber-500/10">
+                  <Server class="w-4 h-4" />
+                  重启管理模块
+                </button>
+                <button class="cyber-button w-full py-3 holo-card border border-rose-500/30 rounded-xl text-sm font-bold text-rose-400 transition-all flex items-center justify-center gap-2 hover:bg-rose-500/10">
+                  <AlertTriangle class="w-4 h-4" />
+                  紧急断电保护
+                </button>
+              </div>
             </div>
-          </div>
-
-          <!-- Actions -->
-          <div class="space-y-3">
-            <h3 class="text-sm font-bold text-white mb-2">远程操作</h3>
-            <button class="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2">
-              <Activity class="w-4 h-4" />
-              导出健康报告
-            </button>
-            <button class="w-full py-3 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl text-sm font-medium text-rose-400 transition-all flex items-center justify-center gap-2">
-              <AlertTriangle class="w-4 h-4" />
-              强制重启 PDU
-            </button>
           </div>
         </div>
       </div>
-    </div>
   </div>
 </template>
 
