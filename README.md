@@ -1,5 +1,7 @@
 # IDC 运营指挥平台
 
+[![Deploy to GitHub Pages](https://github.com/simonwillbe888/IDC-System/actions/workflows/deploy.yml/badge.svg)](https://github.com/simonwillbe888/IDC-System/actions/workflows/deploy.yml)
+
 一个基于 Vue 3 + Vite + TypeScript 的现代化 IDC（互联网数据中心）运营指挥平台。
 
 ## 🌐 在线演示
